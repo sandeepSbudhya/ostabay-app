@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
@@ -14,7 +14,7 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
-
+import axios from "axios";
 
 import Firstpage from "./Firstpage";
 
@@ -23,7 +23,7 @@ const drawerWidth = 240;
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
-    color: 'black'
+    color: "black",
   },
   appBar: {
     transition: theme.transitions.create(["margin", "width"], {
@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
   drawer: {
     width: drawerWidth,
     flexShrink: 0,
-    color:'black'
+    color: "black",
   },
   drawerPaper: {
     width: drawerWidth,
@@ -80,6 +80,23 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function PersistentDrawerLeft() {
+  const [updater, setUpdater] = useState(false)
+  const handleUpdate =() =>{
+    setUpdater(!updater)
+  }
+  useEffect(() => {
+    async function fetchData() {
+    const fetched =  await axios.get("http://localhost:8000/api/factoryunit/");
+    setItems(fetched.data)
+    }
+    fetchData();
+    console.log(updater)
+  }, [updater]);
+
+
+
+  const [items, setItems] = React.useState([]);
+
   const classes = useStyles();
   const theme = useTheme();
 
@@ -100,80 +117,79 @@ export default function PersistentDrawerLeft() {
   };
 
   return (
-
-      <div className={classes.root}>
-        <CssBaseline />
-        <AppBar
-          position="fixed"
-          className={clsx(classes.appBar, {
-            [classes.appBarShift]: open,
-          })}
-        >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={handleDrawerOpen}
-              edge="start"
-              className={clsx(classes.menuButton, open && classes.hide)}
+    <div className={classes.root}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        className={clsx(classes.appBar, {
+          [classes.appBarShift]: open,
+        })}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            className={clsx(classes.menuButton, open && classes.hide)}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap>
+            Cumulations Technologies
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        className={classes.drawer}
+        variant="persistent"
+        anchor="left"
+        open={open}
+        classes={{
+          paper: classes.drawerPaper,
+        }}
+      >
+        <div className={classes.drawerHeader}>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === "ltr" ? (
+              <ChevronLeftIcon />
+            ) : (
+              <ChevronRightIcon />
+            )}
+          </IconButton>
+        </div>
+        <Divider />
+        <List>
+          {[
+            "Company details",
+            "Factory unit details",
+            "Statuary uploads",
+            "Machinery details",
+            "Team members",
+            "Banking details",
+            "Subscriptions",
+            "Company references",
+          ].map((text, index) => (
+            <ListItem
+              button
+              key={text}
+              selected={selectedIndex === index}
+              onClick={(event) => handleListItemClick(event, index)}
             >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap>
-              Cumulations Technologies
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Drawer
-          className={classes.drawer}
-          variant="persistent"
-          anchor="left"
-          open={open}
-          classes={{
-            paper: classes.drawerPaper,
-          }}
-        >
-          <div className={classes.drawerHeader}>
-            <IconButton onClick={handleDrawerClose}>
-              {theme.direction === "ltr" ? (
-                <ChevronLeftIcon />
-              ) : (
-                <ChevronRightIcon />
-              )}
-            </IconButton>
-          </div>
-          <Divider />
-          <List>
-            {[
-              "Company details",
-              "Factory unit details",
-              "Statuary uploads",
-              "Machinery details",
-              "Team members",
-              "Banking details",
-              "Subscriptions",
-              "Company references",
-            ].map((text, index) => (
-              <ListItem
-                button
-                key={text}
-                selected={selectedIndex === index}
-                onClick={(event) => handleListItemClick(event, index)}
-              >
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
-        <main
-          className={clsx(classes.content, {
-            [classes.contentShift]: open,
-          })}
-        >
-          <div className={classes.drawerHeader} />
+              <ListItemText primary={text} />
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+      <main
+        className={clsx(classes.content, {
+          [classes.contentShift]: open,
+        })}
+      >
+        <div className={classes.drawerHeader} />
 
-          <Firstpage selectedIndex={selectedIndex} />
-        </main>
-      </div>
+        <Firstpage selectedIndex={selectedIndex} items={items} onUpdate={handleUpdate} />
+      </main>
+    </div>
   );
 }

@@ -18,9 +18,7 @@ import MenuItem from "@material-ui/core/MenuItem";
 // import FormHelperText from "@material-ui/core/FormHelperText";
 import FormControl from "@material-ui/core/FormControl";
 import Select from "@material-ui/core/Select";
-import firebase from "firebase";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { db } from "../firebase/firebaseconfig";
+import axios from "axios";
 
 // import Typography from '@material-ui/core/Typography';
 
@@ -53,6 +51,8 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function Firstpage(props) {
+
+  const items=props.items
   const [open, setOpen] = React.useState(false);
   const [scroll, setScroll] = React.useState("paper");
 
@@ -60,16 +60,17 @@ function Firstpage(props) {
     setOpen(true);
     setScroll(scrollType);
   };
-  const [stateselected, setState] = React.useState("");
 
-  const handleChange = (event) => {
-    setState(event.target.value);
+  const [name, setName] = React.useState("");
+  const handleNameChange = (event) => {
+    setName(event.target.value);
   };
 
+  const [stateselected, setformState] = React.useState("");
 
-  const [units, loading, error] = useCollection(db.collection("units"), {
-    snapshotListenOptions: { includeMetadataChanges: true },
-  });
+  const handleChange = (event) => {
+    setformState(event.target.value);
+  };
 
   const [countryselected, setCountry] = React.useState("");
 
@@ -77,10 +78,39 @@ function Firstpage(props) {
     setCountry(event.target.value);
   };
 
+  const handleSubmit = () => {
+    
+  
+    axios({
+      method: "post",
+      url: "http://localhost:8000/api/factoryunit/",
+      data: {
+        name: name,
+        Country: countryselected,
+      },
+    }).then(res => {if(res){
+      props.onUpdate()
+    }
+      }).catch((err) => {
+      console.error(err);
+    });
+  };
+
   const handleClose = () => {
     setOpen(false);
   };
 
+  const handleDelete = (id) => {
+    
+    axios
+      .delete("http://localhost:8000/api/factoryunit/" + id + "/")
+      .then(res => {if(res){
+        props.onUpdate()
+      }})
+      .catch((err) => {
+        console.log(err);
+      });
+  };
   const descriptionElementRef = React.useRef(null);
   React.useEffect(() => {
     if (open) {
@@ -106,23 +136,35 @@ function Firstpage(props) {
         </Grid>
         <Dialog
           maxWidth="sm"
-          fullWidth="true"
+          fullWidth={true}
           open={open}
           onClose={handleClose}
           scroll={scroll}
           aria-labelledby="scroll-dialog-title"
           aria-describedby="scroll-dialog-description"
         >
-          <DialogTitle id="scroll-dialog-title">Factory / Warehouse </DialogTitle>
+          <DialogTitle id="scroll-dialog-title">
+            Factory / Warehouse{" "}
+          </DialogTitle>
           <DialogContent dividers={scroll === "paper"}>
             <DialogContentText
               id="scroll-dialog-description"
               ref={descriptionElementRef}
               tabIndex={-1}
             >
-              <form className={classes.root} noValidate autoComplete="off">
+              <form
+                className={classes.root}
+                noValidate
+                autoComplete="off"
+                onSubmit={handleSubmit}
+              >
                 <span>Name</span>
-                <TextField id="name-of-factory" label="value" />
+                <TextField
+                  onChange={handleNameChange}
+                  id="name-of-factory"
+                  label="value"
+                  value={name}
+                />
                 <br />
                 <span>Adress Line 1</span>
                 <TextField id="address-line-1" label="value" />
@@ -182,36 +224,36 @@ function Firstpage(props) {
             <Button onClick={handleClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleClose} color="primary">
+            <Button onClick={handleSubmit} color="primary">
               Save
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Card className={classes.card}>
-          <CardActionArea>
-            <CardContent>
-              {units && (
-                <span>
-                  Collection:{" "}
-                  {units.docs.map((doc) => (
-                    <React.Fragment key={doc.id}>
-                      {JSON.stringify(doc.data())},{" "}
-                    </React.Fragment>
-                  ))}
-                </span>
-              )}
-            </CardContent>
-          </CardActionArea>
-          <CardActions>
-            <Button size="small" color="primary">
-              Edit
-            </Button>
-            <Button size="small" color="primary">
-              Delete
-            </Button>
-          </CardActions>
-        </Card>
+        {items.map(function (item) {
+          return (
+            <React.Fragment>
+              <Card className={classes.card} key={item.id}>
+                <CardActionArea>
+                  <CardContent>{item.name},{item.Country}</CardContent>
+                </CardActionArea>
+                <CardActions>
+                  <Button size="small" color="primary">
+                    Edit
+                  </Button>
+                  <Button
+                    key={item.id}
+                    size="small"
+                    color="primary"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Delete
+                  </Button>
+                </CardActions>
+              </Card>
+            </React.Fragment>
+          );
+        })}
       </div>
     );
   }
